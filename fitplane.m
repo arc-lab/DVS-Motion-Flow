@@ -1,3 +1,18 @@
+% fitplane
+%   mm      - local patch of timestamps for estimating 3Dnormal
+%   TH      - Threshold for refining 3D normal estimation (not used in this version).
+%
+% RETURN
+%   vx 		- x component of motion flow field (in image NCOLSxNROWS coordinates)
+%   vy 		- y component of motion flow field (in image NCOLSxNROWS coordinates)
+%             
+% DESCRIPTION
+%   The function computes the local 3D normal to the data in a patch mm.
+%   The output returns the X and Y components of that normal.
+%   
+%   Copyright (C) 2015  Francisco Barranco, 10/10/2016, Universidad de Granada.
+%   License, GNU GPL, free software, without any warranty.
+
 function [vx,vy]=fitplane(mm, TH)
 % TH = 1e-4; %for artificial seqs
 % TH = .1; %for real-world image seq
@@ -5,21 +20,23 @@ vx = 0; vy = 0;
 
 % [M,N]=size(mm);
 
-
+% Format data for using PCA
 [XX,YY]=find(mm>0);
 X=[];
 for i=1:length(XX)
     X=[X; XX(i) YY(i) mm(XX(i),YY(i))];
 end
 
+% Do PCA to extract the local 3D normal
 [coeff]=pca_modified(X');
 
-if size(coeff,2)< 3 %get out when there are no enough points
+if size(coeff,2)< 3 %get out when there are not enough points
     return
 end
 
 normal = coeff(:,3);
 
+% This is just for debugging: Visualize the 3D plane fitted
 % meanX = mean(X,1);
 % 
 % [xgrid,ygrid] = meshgrid(1:M,1:N);
@@ -31,12 +48,12 @@ normal = coeff(:,3);
 %     vy = 1./vy*1e6;
 % end
 
-% Applying normalization proposed in Ruckaer and Delbruck, 2016
+% Applying normalization proposed in Ruckaer and Delbruck, 2016 and translating into pix/s
 vx = -normal(3)/(normal(2)^2+normal(1)^2)*normal(1)*1e6;
 vy = -normal(3)/(normal(2)^2+normal(1)^2)*normal(2)*1e6;
-
 end
 
+% OLD VERSIONS
 % function [vx,vy]=fitplane(mm)
 % [M,N]=size(mm);
 % 

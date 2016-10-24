@@ -15,13 +15,17 @@ addpath(genpath('./toolbox'));
 
 %step_size = 4000;
 % step_size = 20940;
-step_size = 20940;
+step_size = 20940; % reading all the events for this sequence; in normal conditions, read less than that.
 % step_size = 1e4-10;
 step_size_small = 1000;
 
 %curr_event = 6500; num_frame = 1;
-curr_event = 1; num_frame = 1;
+curr_event = 1; num_frame = 1; % start from the first event
+
 N = 3; TH1 = 0.99; TH2 = 1e-3; % for artificial seqs
+% N is the size (2*N+1 x 2*N+1) of the neighborhood for estimating local normals
+% TH1 is a threshold for locality of timestamp (see computeFlow())
+% TH2 is not used in this version (in order to speed up processing), it is used for refining estimation
 %N = 5; TH1 = 0.2;  TH2 = 0.1; % for real-world seqs
 
 while (curr_event + step_size) < numel(ts_selected_)
@@ -30,17 +34,17 @@ while (curr_event + step_size) < numel(ts_selected_)
     t = double(ts_selected_(curr_event:curr_event+step_size));
     pol = pol_selected_(curr_event:curr_event+step_size);
     
-    t = t-t(1);
+    t = t-t(1); % local times for each chunk of data
     [vx_tmp, vy_tmp, It_tmp] = computeFlow(x, y, t, pol, N, TH1, TH2, NCOLS, NROWS);
     
-    It = It_tmp;
-    It(It<(t(end)/2))=0;
+    % Formatting resutls for presenting the flow
+    It = It_tmp; 
+    It(It<(t(end)/2))=0; % show flow only in positions where events happened in the last haft part of the sequence
     mask=(It~=0); vx_tmp = vx_tmp.*mask; vy_tmp = vy_tmp.*mask;
     
-    vx = medfilt2(vx_tmp); vy = medfilt2(vy_tmp);
+    vx = medfilt2(vx_tmp); vy = medfilt2(vy_tmp); % use median filter to normalize results
     
-    keyboard
-    
+    % Show the flow
     h=figure(1);
     set (h, 'Units', 'pixels', 'Position', [20,20,240*6,180*6]);
     imagesc(flipud(It_tmp)), hold on, axis off, axis equal, quiver(flipud(vx),flipud(-vy), 3, 'color', [1 0 0])   
